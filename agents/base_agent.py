@@ -1,47 +1,41 @@
 from typing import Dict, Any
 import json
-from openai import OpenAI
+from langchain_community.chat_models import ChatOllama
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 
 
 class BaseAgent:
     def __init__(self, name: str, instructions: str):
         self.name = name
         self.instructions = instructions
-        self.ollama_client = OpenAI(
-            base_url="http://localhost:11434/v1",
-            api_key="ollama",  # required but unused
-        )
+        self.llm = ChatOllama(model="llama3.2:1b-instruct-q5_0", temperature=0.7)
+        self.json_parser = JsonOutputParser()
+        self.prompt_template = ChatPromptTemplate.from_messages([
+            ("system", self.instructions),
+            ("user", "{input}"),
+        ])
 
     async def run(self, messages: list) -> Dict[str, Any]:
         """Default run method to be overridden by child classes"""
         raise NotImplementedError("Subclasses must implement run()")
 
-    def _query_ollama(self, prompt: str) -> str:
-        """Query Ollama model with the given prompt"""
+    def _invoke_llm(self, prompt: str) -> Dict[str, Any]:
+        """Invoke Langchain LLM with the given prompt and parse JSON output"""
         try:
-            response = self.ollama_client.chat.completions.create(
-                model="llama3.2:1b-instruct-q5_0",  # Updated to llama3.2
-                messages=[
-                    {"role": "system", "content": self.instructions},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.7,
-                max_tokens=2000,
-            )
-            return response.choices[0].message.content
+            chain = self.prompt_template | self.llm | self.json_parser
+            response = chain.invoke({"input": prompt})
+            return response
         except Exception as e:
-            print(f"Error querying Ollama: {str(e)}")
+            print(f"Error invoking LLM or parsing JSON: {str(e)}")
             raise
 
     def _parse_json_safely(self, text: str) -> Dict[str, Any]:
         """Safely parse JSON from text, handling potential errors"""
         try:
-            # Try to find JSON-like content between curly braces
-            start = text.find("{")
-            end = text.rfind("}")
-            if start != -1 and end != -1:
-                json_str = text[start : end + 1]
-                return json.loads(json_str)
-            return {"error": "No JSON content found"}
-        except json.JSONDecodeError:
-            return {"error": "Invalid JSON content"}
+            return self.json_parser.parse(text)
+        except Exception as e:
+            print(f"Error parsing JSON: {str(e)}")
+            return {"error": f"Invalid JSON content: {e}"}
+
+
