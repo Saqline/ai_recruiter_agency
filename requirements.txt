@@ -9,3 +9,7 @@ python-dotenv==1.0.0
 rich==13.7.0
 streamlit==1.32.0
 # swarm-ai==0.1.0
+langchain==0.1.16
+langchain-core==0.1.43
+langchain-community==0.0.32
+langgraph==0.0.36
