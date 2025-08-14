@@ -23,8 +23,8 @@ class ExtractorAgent(BaseAgent):
         else:
             raw_text = resume_data.get("text", "")
 
-        # Get structured information from Ollama
-        extracted_info = self._query_ollama(raw_text)
+        # Get structured information using Langchain LLM
+        extracted_info = self._invoke_llm(raw_text)
 
         return {
             "raw_text": raw_text,
@@ -105,3 +105,4 @@ class ExtractorAgent(BaseAgent):
 #     instructions="Extract relevant information from resumes and provide it in JSON format.",
 #     functions=[extractor_agent_function],
 # )
+
