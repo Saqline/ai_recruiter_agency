@@ -18,10 +18,10 @@ class AnalyzerAgent(BaseAgent):
         )
 
     async def run(self, messages: list) -> Dict[str, Any]:
-        """Analyze the extracted resume data"""
+        """Analyze the extracted resume data using Langchain LLM"""
         print("🔍 Analyzer: Analyzing candidate profile")
 
-        extracted_data = eval(messages[-1]["content"])
+        extracted_data = messages # Assuming messages directly contains the extracted_data dict
 
         # Get structured analysis from Ollama
         analysis_prompt = f"""
@@ -44,8 +44,7 @@ class AnalyzerAgent(BaseAgent):
         Return ONLY the JSON object, no other text.
         """
 
-        analysis_results = self._query_ollama(analysis_prompt)
-        parsed_results = self._parse_json_safely(analysis_results)
+        parsed_results = self._invoke_llm(analysis_prompt)
 
         # Ensure we have valid data even if parsing fails
         if "error" in parsed_results:
