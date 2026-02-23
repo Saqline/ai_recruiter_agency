@@ -19,7 +19,7 @@ class RecommenderAgent(BaseAgent):
         print("💡 Recommender: Generating final recommendations")
 
         workflow_context = eval(messages[-1]["content"])
-        recommendation = self._query_ollama(str(workflow_context))
+        recommendation = self._invoke_llm(str(workflow_context))
 
         return {
             "final_recommendation": recommendation,
